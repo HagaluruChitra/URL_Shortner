@@ -1,11 +1,8 @@
 package com.chitra.urlshortener.config;
 
-import com.chitra.urlshortener.auth.JwtAuthenticationFilter;
-import com.chitra.urlshortener.auth.RateLimitFilter;
-import com.chitra.urlshortener.auth.UserDetailsServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,10 +17,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.chitra.urlshortener.auth.JwtAuthenticationFilter;
+import com.chitra.urlshortener.auth.RateLimitFilter;
+import com.chitra.urlshortener.auth.UserDetailsServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Configuration
 public class SecurityConfig {
+    @SuppressWarnings("unused")
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
+    @SuppressWarnings("unused")
     @Bean
     DaoAuthenticationProvider authenticationProvider(UserDetailsServiceImpl users, PasswordEncoder encoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -32,10 +36,12 @@ public class SecurityConfig {
         return provider;
     }
 
+    @SuppressWarnings("unused")
     @Bean AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
+    @SuppressWarnings("unused")
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
                                            RateLimitFilter rateLimitFilter, DaoAuthenticationProvider provider,

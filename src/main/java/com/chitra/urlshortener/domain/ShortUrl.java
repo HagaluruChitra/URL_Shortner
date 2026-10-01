@@ -68,4 +68,5 @@ public class ShortUrl {
     public UrlStatus getStatus() { return status; }
     public Instant getExpiresAt() { return expiresAt; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }
