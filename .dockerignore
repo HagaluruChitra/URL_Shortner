@@ -1,0 +1,10 @@
+.git
+.mvn
+target
+README.md
+HELP.md
+.idea
+.vscode
+*.log
+*.env
+secrets
