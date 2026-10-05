@@ -1,62 +1,123 @@
 # URL Shortener
 
-Spring Boot URL-shortener service with MySQL persistence, Redis-backed caching and rate limiting, Kafka click-event processing, Flyway migrations, JWT authentication, and Swagger UI.
+A production-oriented URL Shortener backend built with **Java 17 and Spring Boot** that converts long URLs into compact short URLs and provides scalable URL redirection, caching, rate limiting, authentication, and click analytics.
 
-## Run with Docker
+The system uses **MySQL** for persistent storage, **Redis** for caching and rate limiting, **Apache Kafka** for asynchronous click-event processing, and **Flyway** for database schema versioning. The application is fully containerized using Docker Compose.
 
-1. Ensure Docker Desktop is running.
-2. From this directory, start the complete stack:
+---
 
-   ```powershell
-   docker compose up --build
-   ```
+## Features
 
-3. Confirm the application is healthy:
+### URL Shortening
+- Convert long URLs into short, unique URLs.
+- Generate compact URL identifiers using **Base62 encoding**.
+- Persist original and shortened URLs in MySQL.
+- Support URL retrieval and redirection.
+- Handle URL expiration and validation.
 
-   ```powershell
-   Invoke-WebRequest http://localhost:8080/actuator/health
-   ```
+### Authentication & Security
+- User authentication using **JWT**.
+- Stateless authentication using Spring Security.
+- Protected URL-management and analytics operations.
+- Password handling and authentication flow managed through the security layer.
 
-The service is available at `http://localhost:8080`. Swagger UI is at `http://localhost:8080/swagger-ui.html`.
+### Redis Caching
+- Cache frequently accessed short URLs using Redis.
+- Reduce repeated database lookups during URL redirection.
+- Improve response time for high-frequency URLs.
+- Cache invalidation is handled when URL state changes.
 
-Docker creates the MySQL database as `Shorturl` and persists it in the `mysql-data` Docker volume. The application connects to it through the `mysql` service and Flyway creates the schema automatically.
+### Rate Limiting
+- Redis-backed rate limiting for API protection.
+- Restricts excessive requests from clients.
+- Helps protect URL creation and redirection endpoints from abuse.
+- Provides a scalable rate-limiting mechanism across application instances.
 
-To stop the stack while keeping the database data:
+### Click Analytics
+- Track URL access events.
+- Capture click-related information such as request metadata.
+- Publish click events asynchronously through Kafka.
+- Process click events separately from the main redirection flow.
+- Store analytics data for later querying.
 
-```powershell
-docker compose down
-```
+### Kafka Event Processing
+- Uses Apache Kafka for asynchronous click-event processing.
+- URL redirection does not need to wait for analytics persistence.
+- Decouples the URL-serving path from analytics processing.
+- Improves scalability of analytics workloads.
 
-To stop the stack and remove its database volume:
+### Database Management
+- MySQL used as the primary persistent database.
+- Flyway used for database schema versioning and migrations.
+- Database schema is automatically initialized when the application starts.
+- Supports reproducible database setup across environments.
 
-```powershell
-docker compose down -v
-```
+### API Documentation
+- Integrated **Swagger / OpenAPI** documentation.
+- APIs can be explored and tested directly through Swagger UI.
 
-## Configuration
+### Validation & Error Handling
+- Request validation for API inputs.
+- Centralized exception handling.
+- Consistent error responses for invalid requests and application failures.
 
-The Docker Compose file configures the required services and these application settings:
+---
 
-| Setting | Docker value |
-| --- | --- |
-| Database | `Shorturl` |
-| Database host | `mysql:3306` |
-| Redis host | `redis:6379` |
-| Kafka broker | `kafka:9092` |
-| Application port | `8080` |
+# System Architecture
 
-Set `JWT_SECRET` before starting Docker Compose in any environment where the default development key is not appropriate. It must be a Base64-encoded key at least 32 bytes long.
+```text
+                         ┌──────────────────────┐
+                         │       Client         │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   Spring Boot API    │
+                         │   REST Controllers   │
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┼────────────────┐
+                    │               │                │
+                    ▼               ▼                ▼
+              ┌──────────┐   ┌────────────┐   ┌──────────────┐
+              │   JWT    │   │   Redis    │   │ Rate Limiter │
+              │ Security │   │   Cache    │   │    Redis     │
+              └──────────┘   └────────────┘   └──────────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │    Service Layer     │
+                         │ URL Shortening Logic │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │        MySQL         │
+                         │ Persistent URL Data  │
+                         └──────────────────────┘
 
-## Local Development
+                  URL Click / Analytics Flow
 
-The application keeps an H2 in-memory fallback database named `Shorturl` for local development. Start it with:
-
-```powershell
-.\mvnw.cmd spring-boot:run
-```
-
-Run the test suite with:
-
-```powershell
-.\mvnw.cmd test
-```
+                         URL Redirect Request
+                                  │
+                                  ▼
+                         ┌────────────────┐
+                         │ Redis / MySQL  │
+                         └───────┬────────┘
+                                 │
+                                 ▼
+                         Redirect to Target
+                                 │
+                                 ▼
+                         Publish Click Event
+                                 │
+                                 ▼
+                         ┌────────────────┐
+                         │     Kafka      │
+                         └───────┬────────┘
+                                 │
+                                 ▼
+                         Analytics Consumer
+                                 │
+                                 ▼
+                         Analytics Storage
